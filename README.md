@@ -1,6 +1,11 @@
 # Prometheus NodeExporter Grafana Alertmanager Setup
 This is a documentation on setting up Prometheus Node Exporter Grafana and Alertmanager on Ubuntu 20.04
 
+Table of Contents:
+
+- [Prometheus](#installing-prometheus)
+- [Node-Exporter](#installing-node-exporter)
+
 **For the following reasons, dedicated Linux users or system accounts should be created for each service**
 
 1. To reduce the impact in a case of an incident with a service
@@ -103,7 +108,6 @@ Paste the content in [prometheus.service](./configFiles/prometheus.service "targ
 
 **--web.enable-lifecycle**: Allows to manage Prometheus. An example is to reload without restarting the service
 
-
 ## Other Operations
 Enable the Prometheus
 ```
@@ -125,4 +129,70 @@ journalctl -u prometheus -f --no-pager
 **You can now access the Service via Browser**
 ```
 http://<ip-address>:9090
+```
+
+## Installing Node Exporter
+Node Exporter is used to collect Linux system metrics like CPU load and disk I/O
+
+1. Just like Prometheus, create a system user for Node Exporter
+
+```
+sudo useradd --system --no-create-home --shell /bin/false node_exporter
+```
+
+2. Download Node Exporter 
+
+NB: Check the latest version of [Node-Exporter](https://prometheus.io/download/)
+
+At the time of this documentation, the latest version is 1.4.0
+```
+wget https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.4.0.linux-amd64.tar.gz
+```
+
+3. Extract the files from the archive file
+```
+tar -xvf node_exporter-1.4.0.tar.gz
+```
+
+4. Move binary to the /usr/local/bin
+```
+sudo mv node_exporter-1.3.1.linux-amd64/node_exporter /usr/local/bin/
+```
+
+5. Delete node_exporter archive and folder (***optional***)
+```
+rm -rf node_exporter*
+```
+
+Verify the version
+```
+node_exporter --version
+```
+More information
+```
+node_exporter --help
+```
+
+6. Create a systemd unit configuration file
+```
+sudo nano /etc/systemd/system/node_exporter.service
+```
+Paste the content in [node_exporter.service](./configFiles/node_exporter.service "target=_blank")
+
+## Other Operations
+Enable the Node Exporter
+```
+sudo systemctl enable node_exporter
+```
+Start Node Exporter
+```
+sudo systemctl start node_exporter
+```
+Check Status of Node Exporter service
+```
+sudo systemctl status node_exporter
+```
+Search for errors with ```journalctl``` command
+```
+journalctl -u node_exporter -f --no-pager
 ```
