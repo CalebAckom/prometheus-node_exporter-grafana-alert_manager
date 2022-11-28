@@ -179,6 +179,29 @@ sudo nano /etc/systemd/system/node_exporter.service
 ```
 Paste the content in [node_exporter.service](./configFiles/node_exporter.service "target=_blank")
 
+7. Create a static target for Node Exporter service in Prometheus configuration
+```
+sudo nano /etc/prometheus/prometheus.yml
+```
+
+```
+...
+    - job_name: node_exporter
+      static_configs:
+        - targets: ['localhost:9100']
+```
+
+NB: Node Exporter, by default, runs on port 9100
+
+8. Check to verify the configuration is valid
+```
+promtool check config /etc/prometheus/prometheus.yml
+```
+9. Use POST request to reload the config
+```
+curl -X POST http://localhost:9000/-/reload
+```
+
 ## Other Operations
 Enable the Node Exporter
 ```
