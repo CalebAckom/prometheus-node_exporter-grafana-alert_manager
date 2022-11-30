@@ -5,6 +5,7 @@ Table of Contents:
 
 - [Prometheus](#installing-prometheus)
 - [Node-Exporter](#installing-node-exporter)
+- [Grafana](#installing-grafana)
 
 **For the following reasons, dedicated Linux users or system accounts should be created for each service**
 
@@ -199,7 +200,7 @@ promtool check config /etc/prometheus/prometheus.yml
 ```
 9. Use POST request to reload the config
 ```
-curl -X POST http://localhost:9000/-/reload
+curl -X POST http://localhost:9090/-/reload
 ```
 
 ## Other Operations
@@ -218,4 +219,81 @@ sudo systemctl status node_exporter
 Search for errors with ```journalctl``` command
 ```
 journalctl -u node_exporter -f --no-pager
+```
+
+## Installing Grafana
+We will use Grafana to visualize the metrics.
+
+1. Install dependencies
+```
+sudo apt-get install -y apt-transport-https software-properties-common
+```
+
+2. Add GPG Key
+GPG, short for GNU Privacy Guard, key is a public key that allows for the secure
+transmission of information between parties and can be used to verify that the origin
+of a message is genuine. - Digital Ocean
+```
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+```
+
+3. Add this repository for stable releases
+```
+echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+```
+
+4. Now, update and install Grafana
+```
+sudo apt-get update
+```
+```
+sudo apt-get install -y grafana
+```
+
+5. Enable the Grafana service
+```
+sudo systemctl enable grafana-server
+```
+
+6. Start Grafana
+```
+sudo systemctl start grafana-server
+```
+
+## Other Operations
+Check the status
+```
+sudo systemctl status grafana-server
+```
+
+Go to ```http://<ip-address>:3000``` and log in
+
+Default credentials, Username is **admin** and Password is **admin** as well
+
+You can now choose your password after a successful login
+
+7. To visualize the metrics, a data source must be first added
+There are two (2) ways
+
+## With Grafana's UI
+Click ```Add data source```
+
+Select ```Prometheus```
+
+For URL, input ```http://localhost:9090```
+
+Click ```Save and test```. You should get a ```Data source is working``` message.
+
+## As Code
+1. Create a new ```datasources.yml``` file
+```
+sudo nano /etc/grafana/provisioning/datasources/datasources.yaml
+```
+
+2. Paste the content in 
+Paste the content in [datasources.yml](./configFiles/datasources.yml "target=_blank")
+
+3. Restart Grafana server to reload the configuration
+```
+sudo systemctl restart grafana-server
 ```
