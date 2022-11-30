@@ -6,13 +6,14 @@ Table of Contents:
 - [Prometheus](#installing-prometheus)
 - [Node-Exporter](#installing-node-exporter)
 - [Grafana](#installing-grafana)
+- [Alertmanager](#installing-alertmanager)
 
 **For the following reasons, dedicated Linux users or system accounts should be created for each service**
 
 1. To reduce the impact in a case of an incident with a service
 2. To simplify administration because it is easier to track down what resources belong to which service.
 
-## Installing Prometheus
+>## Installing Prometheus
 1. Create a user for Prometheus service
 
 ```
@@ -132,7 +133,7 @@ journalctl -u prometheus -f --no-pager
 http://<ip-address>:9090
 ```
 
-## Installing Node Exporter
+>## Installing Node Exporter
 Node Exporter is used to collect Linux system metrics like CPU load and disk I/O
 
 1. Just like Prometheus, create a system user for Node Exporter
@@ -221,7 +222,7 @@ Search for errors with ```journalctl``` command
 journalctl -u node_exporter -f --no-pager
 ```
 
-## Installing Grafana
+>## Installing Grafana
 We will use Grafana to visualize the metrics.
 
 1. Install dependencies
@@ -296,4 +297,109 @@ Paste the content in [datasources.yml](./configFiles/datasources.yml "target=_bl
 3. Restart Grafana server to reload the configuration
 ```
 sudo systemctl restart grafana-server
+```
+
+>## Installing Alertmanager
+Alertmanager, as the name depicts, is used to send alerts. These alerts can be to receiver integrations
+such as emails, Slack channels, PagerDuty, etc.
+
+For high availability, you can set up multiple Alertmanagers.
+
+1. Create a user for Alertmanager service
+```
+sudo useradd --system --no-create-home --shell /bin/false alertmanager
+```
+
+2. Download Alertmanager
+NB: Check the latest version of [Alertmanager](https://prometheus.io/download/)
+
+At the time of this documentation, the latest version is 2.40.0
+```
+wget https://github.com/prometheus/alertmanager/releases/download/v0.24.0/alertmanager-0.24.0.linux-amd64.tar.gz
+```
+
+3. Extract Alertmanager binary
+```
+tar -xvf alertmanager-0.24.0.linux-amd64.tar.gz
+```
+
+4. Create storage
+
+We need storage for Alertmanager. The default is ```data/```.
+This is used to store Alertmanager's notification states and silences
+Without this state (or if you wipe it), Alertmanager would not know across restarts what silences were created or what notifications were already sent
+
+```
+sudo mkdir -p /alertmanager-data /etc/alertmanager
+```
+
+5. Move Alertmanager's binary to the local bin directory
+```
+sudo mv alertmanager-0.23.0.linux-amd64/alertmanager /usr/local/bin/
+```
+
+6. Copy sample config file
+```
+sudo mv alertmanager-0.23.0.linux-amd64/alertmanager.yml /etc/alertmanager/
+```
+
+7. Remove archive and directory
+```
+rm -rf alertmanager*
+```
+
+8. Create a systemd unit configuration file
+```
+sudo nano /etc/systemd/system/alertmanager.service
+```
+Paste the content in [alertmanager.service](./configFiles/alertmanager.service "target=_blank")
+
+9. Enable Alertmanager
+```
+sudo systemctl enable alertmanager
+```
+
+10. Start Alertmanager
+```
+sudo systemctl start alertmanager
+```
+
+>NB: Alertmanager is exposed on port 9093
+
+11. Create alert rule
+
+For this documentation, we will create a simple alert
+
+An alert which will be triggered when a job or service connected to Prometheus is down for more than a minute
+```
+sudo nano /etc/prometheus/alert_rule.yml
+```
+Paste the content in [alert_rule.yml](./configFiles/alert_rule.yml "target=_blank")
+
+12. Update the Prometheus configuration file
+```
+sudo nano /etc/prometheus/prometheus.yml
+```
+Copy and paste the final content of [prometheus.yml](./configFiles/prometheus.yml "target=_blank") for this documentation
+
+13. Check the Prometheus configuration
+```
+promtool check config /etc/prometheus/prometheus.yml
+```
+
+14. Reload Prometheus
+```
+curl -X POST -u admin:devops123 http://localhost:9090/-/reload
+```
+
+## Other Operations
+1. Check version
+
+```
+alertmanager --version
+```
+
+2. Check status of service
+```
+sudo systemctl status alertmanager
 ```
